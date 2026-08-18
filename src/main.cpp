@@ -1,8 +1,10 @@
-#include <iostream>
+#include "app.hpp"
 
 int main(int argc, char** argv)
 {
-    std::cout << "Hello World!" << std::endl;
-    
+    {
+        App app{};
+        app.Run();
+    }
     return 0;
 }
