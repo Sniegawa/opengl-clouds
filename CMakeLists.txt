@@ -3,12 +3,19 @@ cmake_minimum_required(VERSION 3.25)
 project(clouds)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(clouds 
     "src/main.cpp"
     "src/app.cpp"
     "src/renderer/TextureHelper.cpp"
     "src/renderer/Texture.cpp"
+    "src/renderer/Shader.cpp"
+    "src/renderer/ComputeShader.cpp"
+    "src/renderer/StorageBuffer.cpp"
+    "src/renderer/UniformBuffer.cpp"
+    "src/renderer/RenderContext.cpp"
 
 )
 
