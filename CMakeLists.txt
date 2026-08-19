@@ -11,7 +11,7 @@ add_executable(clouds
 
 
 add_library(glad STATIC
-    external/glad/src/glad.c
+    external/glad/src/gl.c
 )
 target_include_directories(glad PUBLIC
     external/glad/include
@@ -29,5 +29,5 @@ target_link_libraries(clouds PRIVATE
     OpenGL::GL    
 )
 
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
