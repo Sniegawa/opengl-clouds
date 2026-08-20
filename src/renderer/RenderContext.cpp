@@ -7,7 +7,7 @@ namespace Renderer
     RenderContext::RenderContext(uint32_t width, uint32_t height)
         :
            width(width),height(height),
-           TestOutputTexture(width,height,InternalFormat::RGBA16F)
+           NoiseTexture(2048,2048,InternalFormat::RGBA16F)
     {}
 
     RenderContext::~RenderContext()

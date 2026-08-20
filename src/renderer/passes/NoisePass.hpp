@@ -8,20 +8,17 @@
 
 namespace Renderer
 {
-    class TestComputePass : public RenderPass
+
+    class NoisePass : public RenderPass
     {
     public:
-
-        TestComputePass(RenderContext& context);
-
+        NoisePass(const RenderContext& context);
+        
         void execute(RenderContext& context) override;
 
     private:
         ComputeShader m_CompShader;
-    
         ShaderResources m_Resources;
-
-        uint32_t m_Width, m_Height;
     };
 
 

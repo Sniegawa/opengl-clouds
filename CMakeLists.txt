@@ -18,9 +18,8 @@ add_executable(clouds
     "src/renderer/UniformBuffer.cpp"
     "src/renderer/RenderContext.cpp"
     "src/renderer/ShaderResources.cpp"
-    "src/renderer/passes/TestComputePass.cpp"
     "src/renderer/passes/FullScreenQuadPass.cpp"
-
+    "src/renderer/passes/NoisePass.cpp"
 )
 
 

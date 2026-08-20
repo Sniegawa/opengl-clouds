@@ -2,8 +2,8 @@
 
 #include "RenderContext.hpp"
 
-#include "passes/TestComputePass.hpp"
 #include "passes/FullScreenQuadPass.hpp"
+#include "passes/NoisePass.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -23,7 +23,7 @@ namespace Renderer
     private:
         RenderContext m_Context;
 
-        TestComputePass m_TestPass;
+        NoisePass m_NoisePass;
 
         FSQPass m_FSQpass;   
 

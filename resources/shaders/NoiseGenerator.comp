@@ -1,0 +1,62 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(rgba16f, binding = 0) uniform image2D outputImage;
+
+float hash21(vec2 p)
+{
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    
+    return fract(p.x * p.y);
+}
+
+vec2 randomPoint(vec2 cell, float period)
+{
+    cell = mod(cell,period);
+
+    return vec2(hash21(cell),hash21(cell + 17.17));
+}
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(outputImage);
+
+    if(pixel.x >= size.x || pixel.y >= size.y)
+        return;
+
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
+
+    float cells = 32.0;
+
+    vec2 gridPos = uv * cells;
+    vec2 cell = floor(gridPos);
+    vec2 localPos = fract(gridPos);
+
+    float minDistance = 1e10;
+
+    for(int y = -1; y <= 1; ++y)
+    {
+        for(int x = -1; x <= 1; ++x)
+        {
+            vec2 neighbour = vec2(x,y);
+
+            vec2 featurePoint = randomPoint(cell + neighbour, cells);
+
+            vec2 delta = neighbour + featurePoint - localPos;
+
+            float distance = dot(delta,delta);
+
+            minDistance = min(minDistance,distance);
+        }
+    }
+
+    float worley = sqrt(minDistance);
+
+    worley = 1.0 - worley;
+
+    imageStore(outputImage,pixel, vec4(worley,worley,worley,1.0));
+
+}
