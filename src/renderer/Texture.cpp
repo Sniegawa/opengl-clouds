@@ -56,6 +56,27 @@ namespace Renderer
         glDeleteTextures(1, &m_Handle);
     }
 
+
+    void Texture::bind(uint32_t unit) const
+    {
+        glBindTextureUnit(unit,m_Handle);
+    }
+
+    void Texture::bindImage(uint32_t unit, ImageAccess access) const
+    {
+        glBindImageTexture(
+                unit,
+                m_Handle,
+                0,
+                false,
+                0,
+                Helper::ToGL(access),
+                Helper::ToGL(m_InternalFormat)
+        );
+    }
+
+
+
     void Texture::setData(const void* data, Format format, DataType dataType)
     {
         switch(m_Target)
@@ -101,6 +122,47 @@ namespace Renderer
                 Helper::ToGL(dataType),
                 data
         );
+    }
+
+    void Texture::Resize(uint32_t width, uint32_t height, uint32_t depth)
+    {
+        if(m_Width == width && m_Height == height && m_Depth == depth)
+            return;
+
+        m_Width = width;
+        m_Height = height;
+        m_Depth = depth;
+
+        glDeleteTextures(1, &m_Handle);
+
+        glCreateTextures(
+                Helper::ToGL(m_Target),
+                1,
+                &m_Handle
+        );
+
+        if(m_Target == TextureType::Texture2D)
+        {
+            glTextureStorage2D(
+                    m_Handle,
+                    1,
+                    Helper::ToGL(m_InternalFormat),
+                    m_Width,
+                    m_Height
+            );
+        }
+        else if(m_Target == TextureType::Texture3D)
+        {
+            glTextureStorage3D(
+                    m_Handle,
+                    1,
+                    Helper::ToGL(m_InternalFormat),
+                    m_Width,
+                    m_Height,
+                    m_Depth
+            );
+        }
+
     }
 
 

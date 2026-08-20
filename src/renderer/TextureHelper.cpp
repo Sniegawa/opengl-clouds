@@ -189,7 +189,27 @@ unsigned int ToGL(TextureType type)
                     return GL_TEXTURE_CUBE_MAP;
             }
             std::cout<< "Couldnt resolve Texture Type macro" << std::endl;
-            return 0;
+            return GL_NONE;
+}
+
+unsigned int ToGL(ImageAccess access)
+{
+
+    switch(access)
+    {
+        case ImageAccess::ReadOnly:
+            return GL_READ_ONLY;
+
+        case ImageAccess::ReadWrite:
+            return GL_READ_WRITE;
+
+        case ImageAccess::WriteOnly:
+            return GL_WRITE_ONLY;
+    }
+
+    std::cout << " Couldn't resolve Image access type" << std::endl;
+
+    return GL_NONE;
 }
 
 } // namespace Helper

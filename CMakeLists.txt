@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(clouds 
     "src/main.cpp"
     "src/app.cpp"
+    "src/renderer/Renderer.cpp"
     "src/renderer/TextureHelper.cpp"
     "src/renderer/Texture.cpp"
     "src/renderer/Shader.cpp"
@@ -16,6 +17,9 @@ add_executable(clouds
     "src/renderer/StorageBuffer.cpp"
     "src/renderer/UniformBuffer.cpp"
     "src/renderer/RenderContext.cpp"
+    "src/renderer/ShaderResources.cpp"
+    "src/renderer/passes/TestComputePass.cpp"
+    "src/renderer/passes/FullScreenQuadPass.cpp"
 
 )
 
@@ -41,3 +45,8 @@ target_link_libraries(clouds PRIVATE
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_custom_command(TARGET clouds POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources"
+		"${CMAKE_CURRENT_BINARY_DIR}/resources"
+)

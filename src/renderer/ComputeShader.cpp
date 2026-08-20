@@ -86,6 +86,11 @@ namespace Renderer
         glUseProgram(m_Handle);
     }
 
+    void ComputeShader::dispatch(int x, int y, int z)
+    {
+        glDispatchCompute(x,y,z);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    }
 
     int ComputeShader::GetUniformLocation(const std::string& name)
     {

@@ -21,6 +21,8 @@ namespace Renderer
 
         void bind() const;
 
+        void dispatch(int x, int y, int z);
+
         unsigned int getHandle() const;
 
         // Uniform setters

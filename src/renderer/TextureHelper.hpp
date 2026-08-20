@@ -96,12 +96,21 @@ enum class TextureType
     TextureCube
 };
 
+enum class ImageAccess
+{
+        ReadOnly,
+        WriteOnly,
+        ReadWrite
+};
+
+
 namespace Helper{
 
 unsigned int ToGL(InternalFormat format);
 unsigned int ToGL(Format format);
 unsigned int ToGL(DataType type);
 unsigned int ToGL(TextureType type);
+unsigned int ToGL(ImageAccess access);
 
 } // Helper
 

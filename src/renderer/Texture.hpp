@@ -19,6 +19,10 @@ namespace Renderer
             Texture(uint32_t width, uint32_t height, uint32_t depth, InternalFormat internalFormat);
             ~Texture();
 
+            void bind(uint32_t unit) const;
+            void bindImage(uint32_t unit, ImageAccess access) const; 
+
+
             void setData(const void* data, Format format, DataType dataType);
 
             // Texture2D function to setSubData
@@ -39,6 +43,7 @@ namespace Renderer
                     uint32_t mipLevel = 0
             );
 
+            void Resize(uint32_t width, uint32_t height, uint32_t depth = 1);
 
             unsigned int getHandle() const;
             TextureType getTargetType() const;
@@ -48,7 +53,13 @@ namespace Renderer
             uint32_t getDepth() const;
 
 
+            Texture(const Texture&) = delete;
             Texture& operator=(const Texture&) = delete;
+
+            Texture(Texture&&) noexcept = default;
+            Texture& operator=(Texture&&) noexcept = default;
+
+
         private:
             unsigned int m_Handle;
             TextureType m_Target;

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <iostream>
+#include <memory>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -38,9 +39,13 @@ App::App()
     
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_CULL_FACE);
 
+    glfwSetWindowUserPointer(m_Window, this);
+    glfwSetFramebufferSizeCallback(m_Window, &App::framebufferResizeCallback);
+
+    m_Renderer = std::make_unique<Renderer::Renderer>(WINDOW_WIDTH,WINDOW_HEIGHT);
 }
 
 App::~App()
@@ -54,13 +59,25 @@ void App::Run()
     while(!glfwWindowShouldClose(m_Window))
     {
         glfwPollEvents();
-
-        
+ 
 
         glClearColor(0.2f, 0.2f, 0.8f, 1.0f);
 
         glClear(GL_COLOR_BUFFER_BIT); 
 
+        m_Renderer->Render();
+
+
         glfwSwapBuffers(m_Window);
+
     }
+}
+
+
+
+void App::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+    app->m_Renderer->OnResize(width, height);
 }

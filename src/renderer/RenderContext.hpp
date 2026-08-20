@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include "UniformBuffer.hpp"
 
+#include "Texture.hpp"
+
 namespace Renderer
 {
     struct CameraData
@@ -25,7 +27,7 @@ namespace Renderer
     class RenderContext
     {
         public:
-            RenderContext();
+            RenderContext(uint32_t width, uint32_t height);
             ~RenderContext();
 
             RenderContext(const RenderContext&) = delete;
@@ -36,6 +38,8 @@ namespace Renderer
 
             UniformBuffer cameraUniformBuffer;
             UniformBuffer frameUniformBuffer;
+
+            Texture TestOutputTexture;
             
             uint32_t width = 0;
             uint32_t height = 0;
