@@ -64,7 +64,9 @@ namespace Renderer
 
     void Texture::bindImage(uint32_t unit, ImageAccess access) const
     {
-        glBindImageTexture(
+        if(m_Target == TextureType::Texture2D)
+        {
+            glBindImageTexture(
                 unit,
                 m_Handle,
                 0,
@@ -72,7 +74,20 @@ namespace Renderer
                 0,
                 Helper::ToGL(access),
                 Helper::ToGL(m_InternalFormat)
-        );
+            );
+        }
+        else if(m_Target == TextureType::Texture3D)
+        {
+             glBindImageTexture(
+                unit,
+                m_Handle,
+                0,
+                GL_TRUE,
+                0,
+                Helper::ToGL(access),
+                Helper::ToGL(m_InternalFormat)
+            );           
+        }
     }
 
 

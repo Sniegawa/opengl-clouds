@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
 #include "UniformBuffer.hpp"
 
@@ -23,6 +24,12 @@ namespace Renderer
         float pad1 = 0.0f;
     };
 
+    struct CloudData
+    {
+        glm::vec3 CloudColor = glm::vec3(0.9f);
+        float Density = 0.0f;
+    };
+
     
     class RenderContext
     {
@@ -39,8 +46,14 @@ namespace Renderer
             UniformBuffer cameraUniformBuffer;
             UniformBuffer frameUniformBuffer;
 
-            Texture NoiseTexture;
+            // Cloud
+            Texture cloudNoiseTexture;
+            UniformBuffer cloudSettingsBuffer;
             
+
+
+            Texture outputTexture;
+
             uint32_t width = 0;
             uint32_t height = 0;
 

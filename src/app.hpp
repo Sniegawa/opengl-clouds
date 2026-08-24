@@ -5,7 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include "renderer/Renderer.hpp"
-
+#include "camera.hpp"
 
 class App {
 public:
@@ -22,4 +22,6 @@ private:
     GLFWwindow* m_Window;
 
     std::unique_ptr<Renderer::Renderer> m_Renderer;
+
+    Camera m_Camera;
 };

@@ -28,7 +28,7 @@ App::App()
 
     glfwMakeContextCurrent(m_Window);
 
-    //glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if(!gladLoadGL((GLADloadfunc)glfwGetProcAddress))
     {
@@ -46,6 +46,10 @@ App::App()
     glfwSetFramebufferSizeCallback(m_Window, &App::framebufferResizeCallback);
 
     m_Renderer = std::make_unique<Renderer::Renderer>(WINDOW_WIDTH,WINDOW_HEIGHT);
+
+    m_Camera.SetFov(75);
+    m_Camera.SetPosition(glm::vec3(0.0f));
+    m_Camera.SetAspectRatio(float(WINDOW_WIDTH) / float(WINDOW_HEIGHT));
 }
 
 App::~App()
@@ -56,19 +60,25 @@ App::~App()
 
 void App::Run()
 {
+    float lastTime = glfwGetTime();
+    float currentTime = lastTime;
     while(!glfwWindowShouldClose(m_Window))
     {
         glfwPollEvents();
- 
 
-        glClearColor(0.2f, 0.2f, 0.8f, 1.0f);
+        currentTime = glfwGetTime();
+        float dt = currentTime - lastTime;
+        lastTime = currentTime;
 
-        glClear(GL_COLOR_BUFFER_BIT); 
+        m_Camera.ProcessInputs(m_Window, dt);
 
-        m_Renderer->Render();
+
+        m_Renderer->Render(m_Camera);
 
 
         glfwSwapBuffers(m_Window);
+
+
 
     }
 }
@@ -80,4 +90,6 @@ void App::framebufferResizeCallback(GLFWwindow* window, int width, int height)
     auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
 
     app->m_Renderer->OnResize(width, height);
+
+    app->m_Camera.SetAspectRatio(float(width)/float(height));
 }

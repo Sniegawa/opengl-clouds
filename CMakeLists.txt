@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(clouds 
     "src/main.cpp"
     "src/app.cpp"
+    "src/camera.cpp"
     "src/renderer/Renderer.cpp"
     "src/renderer/TextureHelper.cpp"
     "src/renderer/Texture.cpp"
@@ -20,6 +21,7 @@ add_executable(clouds
     "src/renderer/ShaderResources.cpp"
     "src/renderer/passes/FullScreenQuadPass.cpp"
     "src/renderer/passes/NoisePass.cpp"
+    "src/renderer/passes/CloudPass.cpp"
 )
 
 

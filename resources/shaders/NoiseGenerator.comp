@@ -1,39 +1,38 @@
 #version 460
 
-layout(local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(rgba16f, binding = 0) uniform image2D outputImage;
+layout(rgba8, binding = 0) uniform image3D outputImage;
 
-float hash21(vec2 p)
+float hash13(vec3 p)
 {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    
-    return fract(p.x * p.y);
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
 }
 
-vec2 randomPoint(vec2 cell, float period)
+vec3 randomPoint(vec3 cell, float period, float seed)
 {
-    cell = mod(cell,period);
+    cell = mod(cell, period);
+    cell = mod(cell + period, period);
 
-    return vec2(hash21(cell),hash21(cell + 17.17));
+    return vec3(
+        hash13(cell + seed * 13.17),
+        hash13(cell + seed * 27.31),
+        hash13(cell + seed * 41.73)
+    );
 }
 
-void main()
+float Noise(float cells, float seed)
 {
-    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(outputImage);
+    ivec3 pixel = ivec3(gl_GlobalInvocationID);
+    ivec3 size = imageSize(outputImage);
 
-    if(pixel.x >= size.x || pixel.y >= size.y)
-        return;
+    vec3 uv = (vec3(pixel) + 0.5) / vec3(size);
 
-    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
-
-    float cells = 32.0;
-
-    vec2 gridPos = uv * cells;
-    vec2 cell = floor(gridPos);
-    vec2 localPos = fract(gridPos);
+    vec3 gridPos = uv * cells;
+    vec3 cell = floor(gridPos);
+    vec3 localPos = fract(gridPos);
 
     float minDistance = 1e10;
 
@@ -41,22 +40,40 @@ void main()
     {
         for(int x = -1; x <= 1; ++x)
         {
-            vec2 neighbour = vec2(x,y);
+            for(int z = -1; z <= 1; ++z)
+            {
+                vec3 neighbour = vec3(x,y,z);
 
-            vec2 featurePoint = randomPoint(cell + neighbour, cells);
+                vec3 featurePoint = randomPoint(cell + neighbour, cells, seed);
 
-            vec2 delta = neighbour + featurePoint - localPos;
+                vec3 delta = neighbour + featurePoint - localPos;
 
-            float distance = dot(delta,delta);
+                float distance = dot(delta,delta);
 
-            minDistance = min(minDistance,distance);
+                minDistance = min(minDistance,distance);
+            }
         }
     }
 
-    float worley = sqrt(minDistance);
+    return sqrt(minDistance);
+}
 
-    worley = 1.0 - worley;
 
-    imageStore(outputImage,pixel, vec4(worley,worley,worley,1.0));
+void main()
+{
+    ivec3 voxel = ivec3(gl_GlobalInvocationID);
+    ivec3 size = imageSize(outputImage);
+
+    if(voxel.x >= size.x || voxel.y >= size.y || voxel.z >= size.z)
+        return;
+
+    // TODO ADD A SEED PROPERTY
+    float F1 = max(0, 1 - Noise(16,11.1));
+    float F2 = max(0, 1 - Noise(32,15.4));
+
+    float D1 = max(0, 1 - Noise(64,10.1));
+    float D2 = max(0, 1 - Noise(128,2.0));
+    
+    imageStore(outputImage,voxel, vec4(F1,F2,D1,D2));
 
 }

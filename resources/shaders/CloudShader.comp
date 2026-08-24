@@ -1,0 +1,75 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+
+layout(rgba8, binding = 0) uniform image3D CloudNoise;
+
+layout(rgba16f, binding = 1) uniform image2D outputImage;
+
+
+layout(std140, binding = 0) uniform CameraData
+{
+    mat4 View; 
+    mat4 Projection;
+    mat4 InverseViewProjection;
+    vec3 Position;
+    float pad1;
+};
+
+vec3 boxMin;
+vec3 boxMax;
+
+bool intersectBox(
+    vec3 rayOrigin,
+    vec3 rayDir,
+    vec3 boxMin,
+    vec3 boxMax
+)
+{
+    vec3 invDir = 1.0 / rayDir;
+
+    vec3 t0 = (boxMin - rayOrigin) * invDir;
+    vec3 t1 = (boxMax - rayOrigin) * invDir;
+
+    vec3 tMin = min(t0, t1);
+    vec3 tMax = max(t0, t1);
+
+    float nearT = max(max(tMin.x, tMin.y), tMin.z);
+    float farT  = min(min(tMax.x, tMax.y), tMax.z);
+
+    return farT >= max(nearT, 0.0);
+}
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size  = imageSize(outputImage);
+
+    if (pixel.x >= size.x || pixel.y >= size.y)
+        return;
+
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
+    vec2 ndc = uv * 2.0 - 1.0;
+
+    // Near/far points in clip space
+    vec4 nearPoint = InverseViewProjection *
+                     vec4(ndc, -1.0, 1.0);
+
+    vec4 farPoint = InverseViewProjection *
+                    vec4(ndc, 1.0, 1.0);
+
+    nearPoint /= nearPoint.w;
+    farPoint  /= farPoint.w;
+
+    vec3 rayOrigin = Position;
+    vec3 rayDir = normalize(farPoint.xyz - rayOrigin);
+
+    vec3 Color = vec3(0.0);
+    if (intersectBox(rayOrigin, rayDir, boxMin, boxMax))
+    {
+        Color = vec3(0.0,1.0,0.0); 
+    }
+    
+    imageStore(outputImage, pixel, vec4(Color.x, Color.y, Color.z, 1.0));
+}
