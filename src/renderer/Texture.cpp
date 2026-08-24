@@ -9,7 +9,7 @@
 
 namespace Renderer
 {
-    Texture::Texture(uint32_t width, uint32_t height, InternalFormat internalFormat)
+    Texture::Texture(uint32_t width, uint32_t height, InternalFormat internalFormat, TextureFlags flags)
         : 
         m_Handle(0),
         m_Width(width), 
@@ -27,9 +27,11 @@ namespace Renderer
                 m_Width,
                 m_Height
         );        
+
+        setFlags(flags);
     }
 
-    Texture::Texture(uint32_t width, uint32_t height, uint32_t depth, InternalFormat internalFormat)
+    Texture::Texture(uint32_t width, uint32_t height, uint32_t depth, InternalFormat internalFormat, TextureFlags flags)
         :
         m_Handle(0),
         m_Width(width), 
@@ -48,12 +50,23 @@ namespace Renderer
             m_Height,
             m_Depth
         );        
-    }
 
+        setFlags(flags);
+    }
 
     Texture::~Texture()
     {
         glDeleteTextures(1, &m_Handle);
+    }
+
+    void Texture::setFlags(TextureFlags flags)
+    {
+        glTextureParameteri(m_Handle, GL_TEXTURE_WRAP_S, Helper::ToGL(flags.wrapS));
+        glTextureParameteri(m_Handle, GL_TEXTURE_WRAP_T, Helper::ToGL(flags.wrapT));
+        glTextureParameteri(m_Handle, GL_TEXTURE_WRAP_R, Helper::ToGL(flags.wrapR));
+
+        glTextureParameteri(m_Handle, GL_TEXTURE_MIN_FILTER, Helper::ToGL(flags.minFilter));
+        glTextureParameteri(m_Handle, GL_TEXTURE_MAG_FILTER, Helper::ToGL(flags.magFilter));
     }
 
 

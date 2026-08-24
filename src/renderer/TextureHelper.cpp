@@ -212,6 +212,41 @@ unsigned int ToGL(ImageAccess access)
     return GL_NONE;
 }
 
+GLenum ToGL(TextureWrap wrap)
+{
+    switch (wrap)
+    {
+        case TextureWrap::Repeat:
+            return GL_REPEAT;
+
+        case TextureWrap::MirroredRepeat:
+            return GL_MIRRORED_REPEAT;
+
+        case TextureWrap::ClampToEdge:
+            return GL_CLAMP_TO_EDGE;
+
+        case TextureWrap::ClampToBorder:
+            return GL_CLAMP_TO_BORDER;
+    }
+
+    return GL_REPEAT;
+}
+
+GLenum ToGL(TextureFilter filter)
+{
+    switch (filter)
+    {
+        case TextureFilter::Nearest:
+            return GL_NEAREST;
+
+        case TextureFilter::Linear:
+            return GL_LINEAR;
+
+    }
+
+    return GL_LINEAR;
+}
+
 } // namespace Helper
 
 } // namespace Renderer

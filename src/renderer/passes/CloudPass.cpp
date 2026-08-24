@@ -35,16 +35,22 @@ namespace Renderer
         CloudData& data = m_Data;
         bool flag = false;
 
+
+        if(ImGui::DragFloat3("Box Min", glm::value_ptr(data.BoxMin),0.1f)) flag = true;
+        if(ImGui::DragFloat3("Box Max", glm::value_ptr(data.BoxMax),0.1f)) flag = true;
+
+        ImGui::Spacing();
+
         
-        if(ImGui::DragFloat("Shape Scale", &data.ShapeNoiseScale,0.001f,0.0001f,2.0f)) flag = true;
+        if(ImGui::DragFloat("Shape Scale", &data.ShapeNoiseScale,0.001f,0.0001f,5.0f)) flag = true;
         if(ImGui::DragFloat3("ShapeOffset", glm::value_ptr(data.ShapeOffset),0.1f)) flag = true;
-        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed)) flag = true;
+        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed),0.01f) flag = true;
 
 
         ImGui::Spacing();
 
         
-        if(ImGui::DragFloat("Detail Scale", &data.DetailNoiseScale,0.001f,0.0001f,2.0f)) flag = true;
+        if(ImGui::DragFloat("Detail Scale", &data.DetailNoiseScale,0.001f,0.0001f,5.0f)) flag = true;
         if(ImGui::DragFloat3("DetailOffset", glm::value_ptr(data.DetailOffset),0.1f)) flag = true;
         if(ImGui::DragFloat("Detail Offset Speed", &data.DetailOffsetSpeed)) flag = true;
 

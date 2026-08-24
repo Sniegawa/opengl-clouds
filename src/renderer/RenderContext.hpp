@@ -37,10 +37,11 @@ namespace Renderer
         glm::vec3 DetailOffset = glm::vec3(0.0f);
         float DetailOffsetSpeed = 0.0f;
 
+        glm::vec3 BoxMin = glm::vec3(-1.0f);
         float DetailNoiseScale = 1.0f;
+
+        glm::vec3 BoxMax = glm::vec3(1.0f);
         float pad1 = 0.0f;
-        float pad2 = 0.0f;
-        float pad3 = 0.0f;
 
     };
 

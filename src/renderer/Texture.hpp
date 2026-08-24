@@ -13,11 +13,14 @@ namespace Renderer
     {
         public:
             // 2D Texure constructor
-            Texture(uint32_t width, uint32_t height, InternalFormat internalFormat);
+            Texture(uint32_t width, uint32_t height, InternalFormat internalFormat, TextureFlags flags = TextureFlags());
 
             // 3D Texture constructor
-            Texture(uint32_t width, uint32_t height, uint32_t depth, InternalFormat internalFormat);
+            Texture(uint32_t width, uint32_t height, uint32_t depth, InternalFormat internalFormat, TextureFlags flags = TextureFlags());
+
             ~Texture();
+
+            void setFlags(TextureFlags flags);
 
             void bind(uint32_t unit) const;
             void bindImage(uint32_t unit, ImageAccess access) const; 

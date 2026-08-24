@@ -1,5 +1,6 @@
 #pragma once
 
+#include "imgui.h"
 namespace Renderer
 {
 
@@ -98,11 +99,34 @@ enum class TextureType
 
 enum class ImageAccess
 {
-        ReadOnly,
-        WriteOnly,
-        ReadWrite
+    ReadOnly,
+    WriteOnly,
+    ReadWrite
 };
 
+enum class TextureWrap
+{
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+    ClampToBorder
+};
+
+enum class TextureFilter
+{
+    Nearest,
+    Linear
+};
+
+struct TextureFlags
+{
+    TextureWrap wrapS = TextureWrap::Repeat;
+    TextureWrap wrapT = TextureWrap::Repeat;
+    TextureWrap wrapR = TextureWrap::Repeat;
+
+    TextureFilter minFilter = TextureFilter::Linear;
+    TextureFilter magFilter = TextureFilter::Linear; 
+};
 
 namespace Helper{
 
@@ -111,6 +135,8 @@ unsigned int ToGL(Format format);
 unsigned int ToGL(DataType type);
 unsigned int ToGL(TextureType type);
 unsigned int ToGL(ImageAccess access);
+unsigned int ToGL(TextureWrap wrap);
+unsigned int ToGL(TextureFilter filter);
 
 } // Helper
 
