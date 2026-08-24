@@ -23,7 +23,7 @@ namespace Renderer
     void UniformBuffer::update(const void* data, std::size_t size, std::size_t offset)
     {
         glBindBuffer(GL_UNIFORM_BUFFER, m_Handle);
-        glBufferSubData(m_Handle, offset, size, data);
+        glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
     }
 
     void UniformBuffer::bind(uint32_t binding) const
