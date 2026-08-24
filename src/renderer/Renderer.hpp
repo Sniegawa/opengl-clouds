@@ -22,6 +22,8 @@ namespace Renderer
 
         void Render(const Camera& camera); // Camera class goes here
 
+        void RenderImGui();
+
         void OnResize(uint32_t width, uint32_t height);
     private:
         RenderContext m_Context;

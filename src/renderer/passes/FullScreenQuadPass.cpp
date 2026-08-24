@@ -30,4 +30,6 @@ namespace Renderer
         glad_glBindVertexArray(0);
     }
 
+    void FSQPass::onImGui(RenderContext& context) {}
+
 }

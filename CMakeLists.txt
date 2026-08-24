@@ -24,6 +24,32 @@ add_executable(clouds
     "src/renderer/passes/CloudPass.cpp"
 )
 
+include(FetchContent)
+
+
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG docking
+)
+
+FetchContent_MakeAvailable(imgui)
+
+target_sources(clouds PRIVATE
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(clouds PRIVATE
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+)
+
 
 add_library(glad STATIC
     external/glad/src/gl.c

@@ -17,7 +17,8 @@ namespace Renderer
             ~FSQPass();
 
             void execute(RenderContext& context) override;
-
+            
+            void onImGui(RenderContext& context) override;
 
         private:
             Shader m_Shader;

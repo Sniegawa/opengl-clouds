@@ -18,11 +18,29 @@ layout(std140, binding = 0) uniform CameraData
     float pad1;
 };
 
-vec3 boxMin = vec3(-2.0,1.0,-2.0);
-vec3 boxMax = vec3(2.0,2.0,2.0);
+layout(std140, binding = 2) uniform CloudData
+{
+   vec3 CloudColor;
+   float NoiseBaseScale;
 
-const int MAX_STEPS = 50;
-const float ABSORPTION = 16.0;
+   vec3 ShapeOffset;
+   float ShapeOffsetSpeed;
+
+   vec3 DetailOffset;
+   float DetailOffsetSpeed;
+
+   float DetailNoiseScale;
+
+   float pad11;
+   float pad12;
+   float pad13;
+};
+
+vec3 boxMin = vec3(-10.0,1.0,-10.0);
+vec3 boxMax = vec3(10.0,5.0,10.0);
+
+const int MAX_STEPS = 100;
+const float ABSORPTION = 8.0;
 const vec3 SKY_COLOR = vec3(0.2,0.2,0.8);
 
 
@@ -31,16 +49,20 @@ float remap(float value, float oldMin, float oldMax, float newMin, float newMax)
     return newMin + (value - oldMin) / (oldMax - oldMin) * (newMax - newMin);
 }
 
-float SampleDensity(vec3 pos)
+float SampleDensity(vec3 RayPos)
 {
-    vec4 baseNoise = texture(CloudNoise, pos);
+    vec3 size = boxMax - boxMin;
+    vec3 uvw = (RayPos - boxMin) * 0.01 * NoiseBaseScale;
+    vec3 shapeSamplePos = uvw + ShapeOffset * ShapeOffsetSpeed;
+
+    vec4 baseNoise = texture(CloudNoise, shapeSamplePos);
 
     float lowFreqFBM = dot(baseNoise.gba, vec3(0.625, 0.25, 0.125));
-    float baseShape = remap(baseNoise.r, lowFreqFBM - 1.0, 1.0, 0.0, 1.0);
+    float baseShape = baseNoise.r;//remap(baseNoise.r, lowFreqFBM - 1.0, 1.0, 0.0, 1.0);
 
     if (baseShape <= 0.0) return 0.0;
 
-    vec3 detailNoise = texture(CloudDetail, pos).rgb;
+    vec3 detailNoise = texture(CloudDetail, uvw * 0.1).rgb;
     float highFreqFBM = dot(detailNoise, vec3(0.625, 0.25, 0.125));
 
     float highFreqModifier = mix(highFreqFBM, 1.0 - highFreqFBM, clamp(baseShape * 5.0, 0.0, 1.0));
@@ -49,11 +71,6 @@ float SampleDensity(vec3 pos)
     return clamp(finalDensity, 0.0, 1.0);
 }
 
-
-vec3 normalizePointInBox(vec3 point)
-{
-    return (point - boxMin) / (boxMax - boxMin);
-}
 
 bool intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax, out vec2 StartEnd)
 {
@@ -109,7 +126,6 @@ void main()
         
         float Transmitance = 1.0;
         vec3 Color = vec3(0.0);
-        vec3 CloudColor = vec3(0.9);
         for(int s = 0; s < MAX_STEPS; ++s)
         {
             if(t > End || Transmitance <= 0.01)
@@ -117,9 +133,8 @@ void main()
 
             vec3 CurrentPos = rayOrigin + rayDir * t;
 
-            vec3 uvw = normalizePointInBox(CurrentPos);
 
-            float density = SampleDensity(uvw);
+            float density = SampleDensity(CurrentPos);
 
             float stepAbsorption = exp(-density * ABSORPTION * stepSize);
 

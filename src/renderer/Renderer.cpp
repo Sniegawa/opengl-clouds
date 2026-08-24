@@ -1,6 +1,10 @@
 #include "Renderer.hpp"
 #include "RenderContext.hpp"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <glad/gl.h>
 #include <iostream>
 
@@ -20,8 +24,13 @@ namespace Renderer
         FrameData DefaultFrameData;
         m_Context.frameUniformBuffer.setData(&DefaultFrameData, sizeof(FrameData));
 
+        CloudData DefaultCloudData;
+        m_Context.cloudSettingsBuffer.setData(&DefaultCloudData, sizeof(CloudData));
 
-        m_NoisePass.execute(m_Context);
+        NoiseData DefaultNoiseData;
+        DefaultNoiseData = MakeDefaultNoiseData();
+        m_Context.NoiseSettingsBuffer.setData(&DefaultNoiseData, sizeof(NoiseData));
+
     }
 
 
@@ -46,10 +55,33 @@ namespace Renderer
 
         glClear(GL_COLOR_BUFFER_BIT); 
 
+        if(m_Context.RegenNoise)
+        {
+            m_Context.RegenNoise = false;
+            m_NoisePass.execute(m_Context);
+        }
 
         m_CloudPass.execute(m_Context);
 
         m_FSQpass.execute(m_Context);
+    }
+
+    void Renderer::RenderImGui()
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+
+
+        m_NoisePass.onImGui(m_Context);
+
+        m_CloudPass.onImGui(m_Context);
+
+        ImGui::EndFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
 

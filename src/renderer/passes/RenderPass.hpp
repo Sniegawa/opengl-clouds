@@ -13,6 +13,8 @@ namespace Renderer
         virtual ~RenderPass() = default;
 
         virtual void execute(RenderContext& context) = 0;
+
+        virtual void onImGui(RenderContext& context) = 0;
     };
 
 

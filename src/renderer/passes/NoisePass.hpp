@@ -16,9 +16,14 @@ namespace Renderer
         
         void execute(RenderContext& context) override;
 
+        void onImGui(RenderContext& context) override;
+
     private:
         ComputeShader m_CompShader;
         ShaderResources m_Resources;
+
+
+        NoiseData m_Data;
     };
 
 

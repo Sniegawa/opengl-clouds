@@ -1,6 +1,8 @@
 #pragma once
 
+#include <array>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <glm/glm.hpp>
 #include "UniformBuffer.hpp"
 
@@ -27,8 +29,49 @@ namespace Renderer
     struct CloudData
     {
         glm::vec3 CloudColor = glm::vec3(0.9f);
-        float Density = 0.0f;
+        float ShapeNoiseScale = 0.5f;
+
+        glm::vec3 ShapeOffset = glm::vec3(0.0f);
+        float ShapeOffsetSpeed = 0.0f;
+
+        glm::vec3 DetailOffset = glm::vec3(0.0f);
+        float DetailOffsetSpeed = 0.0f;
+
+        float DetailNoiseScale = 1.0f;
+        float pad1 = 0.0f;
+        float pad2 = 0.0f;
+        float pad3 = 0.0f;
+
     };
+
+    struct NoiseChannelParams
+    {
+        float cells   = 4.0f;
+        int32_t octaves = 3;
+        float seed    = 0.0f;
+        float _pad    = 0.0f;
+    };
+
+    struct NoiseData
+    {
+        std::array<NoiseChannelParams, 7> noiseChannels;
+    };
+
+    inline NoiseData MakeDefaultNoiseData()
+    {
+        NoiseData data;
+        data.noiseChannels =
+        {{
+            { 8.0f, 5, 1.0f, 0.0f }, // mainR
+            { 8.0f, 4, 2.0f, 0.0f }, // mainG
+            { 16.0f, 4, 3.0f, 0.0f }, // mainB
+            { 32.0f, 4, 4.0f, 0.0f }, // mainA
+            { 12.0f, 3, 5.0f, 0.0f }, // detailR
+            { 24.0f, 3, 6.0f, 0.0f }, // detailG
+            { 48.0f, 3, 7.0f, 0.0f }  // detailB
+        }};
+        return data;
+    }
 
     
     class RenderContext
@@ -52,7 +95,9 @@ namespace Renderer
 
             UniformBuffer cloudSettingsBuffer;
             
-
+            // Noise
+            bool RegenNoise = true;
+            UniformBuffer NoiseSettingsBuffer;
 
             Texture outputTexture;
 

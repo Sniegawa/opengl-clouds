@@ -4,6 +4,11 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
+
 #include <iostream>
 #include <memory>
 
@@ -45,6 +50,22 @@ App::App()
     glfwSetWindowUserPointer(m_Window, this);
     glfwSetFramebufferSizeCallback(m_Window, &App::framebufferResizeCallback);
 
+
+    IMGUI_CHECKVERSION();
+
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
+
+
+
     m_Renderer = std::make_unique<Renderer::Renderer>(WINDOW_WIDTH,WINDOW_HEIGHT);
 
     m_Camera.SetFov(75);
@@ -62,19 +83,38 @@ void App::Run()
 {
     float lastTime = glfwGetTime();
     float currentTime = lastTime;
+
+    bool CursorShown = false;
+    float CursorSwitchCooldown = 0.5f;
+
     while(!glfwWindowShouldClose(m_Window))
     {
         glfwPollEvents();
+
 
         currentTime = glfwGetTime();
         float dt = currentTime - lastTime;
         lastTime = currentTime;
 
-        m_Camera.ProcessInputs(m_Window, dt);
 
+        if(glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS && CursorSwitchCooldown <= 0.0f)
+        {
+            glfwSetInputMode(m_Window, GLFW_CURSOR, CursorShown ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+
+            CursorShown = !CursorShown;
+            CursorSwitchCooldown = 0.5f;
+        }
+
+        CursorSwitchCooldown -= dt;
+
+        if(!CursorShown)
+        {
+            m_Camera.ProcessInputs(m_Window, dt);
+        }
 
         m_Renderer->Render(m_Camera);
 
+        m_Renderer->RenderImGui();
 
         glfwSwapBuffers(m_Window);
 
