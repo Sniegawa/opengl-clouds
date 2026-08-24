@@ -3,9 +3,9 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 
-layout(rgba8, binding = 0) uniform image3D CloudNoise;
+layout(binding = 0) uniform sampler3D CloudNoise;
 
-layout(rgba16f, binding = 1) uniform image2D outputImage;
+layout(rgba16f, binding = 0) uniform image2D outputImage;
 
 
 layout(std140, binding = 0) uniform CameraData
@@ -17,15 +17,18 @@ layout(std140, binding = 0) uniform CameraData
     float pad1;
 };
 
-vec3 boxMin;
-vec3 boxMax;
+vec3 boxMin = vec3(-1.0);
+vec3 boxMax = vec3(1.0);
 
-bool intersectBox(
-    vec3 rayOrigin,
-    vec3 rayDir,
-    vec3 boxMin,
-    vec3 boxMax
-)
+const int MAX_STEPS = 100;
+const float STEP_SIZE = 0.01;
+
+vec3 normalizePointInBox(vec3 point)
+{
+    return (point - boxMin) / (boxMax - boxMin);
+}
+
+bool intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax, out vec2 StartEnd)
 {
     vec3 invDir = 1.0 / rayDir;
 
@@ -37,6 +40,8 @@ bool intersectBox(
 
     float nearT = max(max(tMin.x, tMin.y), tMin.z);
     float farT  = min(min(tMax.x, tMax.y), tMax.z);
+
+    StartEnd = vec2( max(nearT,0.0) , farT);
 
     return farT >= max(nearT, 0.0);
 }
@@ -66,9 +71,28 @@ void main()
     vec3 rayDir = normalize(farPoint.xyz - rayOrigin);
 
     vec3 Color = vec3(0.0);
-    if (intersectBox(rayOrigin, rayDir, boxMin, boxMax))
+    vec2 StartEnd;
+    if (intersectBox(rayOrigin, rayDir, boxMin, boxMax, StartEnd))
     {
-        Color = vec3(0.0,1.0,0.0); 
+        float Start = StartEnd.x;
+        float End = StartEnd.y;
+        float t = Start;
+        for(int s = 0; s < MAX_STEPS; ++s)
+        {
+            if(t > End)
+                break;
+
+            vec3 CurrentPos = rayOrigin + rayDir * t;
+
+            vec3 uvw = normalizePointInBox(CurrentPos);
+
+            float NoiseValue = texture(CloudNoise, uvw).r;
+
+            Color += NoiseValue / MAX_STEPS;
+
+
+            t += STEP_SIZE;
+        }
     }
     
     imageStore(outputImage, pixel, vec4(Color.x, Color.y, Color.z, 1.0));

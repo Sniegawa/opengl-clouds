@@ -6,8 +6,8 @@ namespace Renderer
     CloudPass::CloudPass(const RenderContext& context)
         : m_CompShader("resources/shaders/CloudShader.comp")
     {
-        m_Resources.setImage(0, context.cloudNoiseTexture, ImageAccess::ReadOnly);
-        m_Resources.setImage(1, context.outputTexture, ImageAccess::WriteOnly);
+        m_Resources.setTexture(0, context.cloudNoiseTexture);
+        m_Resources.setImage(0, context.outputTexture, ImageAccess::WriteOnly);
 
         m_Resources.setUniformBuffer(0, context.cameraUniformBuffer);
     }
