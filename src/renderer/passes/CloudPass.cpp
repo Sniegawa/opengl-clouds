@@ -7,6 +7,7 @@ namespace Renderer
         : m_CompShader("resources/shaders/CloudShader.comp")
     {
         m_Resources.setTexture(0, context.cloudNoiseTexture);
+        m_Resources.setTexture(1, context.cloudDetailTexture);
         m_Resources.setImage(0, context.outputTexture, ImageAccess::WriteOnly);
 
         m_Resources.setUniformBuffer(0, context.cameraUniformBuffer);

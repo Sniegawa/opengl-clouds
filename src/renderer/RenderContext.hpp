@@ -48,6 +48,8 @@ namespace Renderer
 
             // Cloud
             Texture cloudNoiseTexture;
+            Texture cloudDetailTexture;
+
             UniformBuffer cloudSettingsBuffer;
             
 

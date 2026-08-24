@@ -8,6 +8,7 @@ namespace Renderer
         : m_CompShader("resources/shaders/NoiseGenerator.comp")
     {
         m_Resources.setImage(0, context.cloudNoiseTexture, ImageAccess::WriteOnly);
+        m_Resources.setImage(1, context.cloudDetailTexture, ImageAccess::WriteOnly);
     }
 
     // TODO: make this execute only once on startup, and eventually on settings tweak

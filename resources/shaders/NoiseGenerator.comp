@@ -2,7 +2,8 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(rgba8, binding = 0) uniform image3D outputImage;
+layout(rgba8, binding = 0) uniform image3D outputMainImage;
+layout(rgba8, binding = 1) uniform image3D outputDetailImage;
 
 float hash13(vec3 p)
 {
@@ -23,10 +24,9 @@ vec3 randomPoint(vec3 cell, float period, float seed)
     );
 }
 
-float Noise(float cells, float seed)
+float Noise(vec3 size, float cells, float seed)
 {
     ivec3 pixel = ivec3(gl_GlobalInvocationID);
-    ivec3 size = imageSize(outputImage);
 
     vec3 uv = (vec3(pixel) + 0.5) / vec3(size);
 
@@ -58,22 +58,141 @@ float Noise(float cells, float seed)
     return sqrt(minDistance);
 }
 
+// PERLIN IS FROM CLAUDE
+vec3 fade3(vec3 t)
+{
+    return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+}
+
+// Returns a pseudo-random unit gradient vector for a given cell,
+// wrapped to `period` so gradients repeat seamlessly across tile edges.
+vec3 randomGradient(vec3 cell, float period, float seed)
+{
+    cell = mod(cell, period);
+    cell = mod(cell + period, period); // guard against negative cells
+
+    float h1 = hash13(cell + seed * 13.17);
+    float h2 = hash13(cell + seed * 27.31);
+
+    // uniform random direction on the unit sphere
+    float theta = h1 * 6.28318530718;
+    float z = h2 * 2.0 - 1.0;
+    float r = sqrt(max(0.0, 1.0 - z * z));
+    return vec3(r * cos(theta), r * sin(theta), z);
+}
+
+float PerlinNoise(vec3 size, float cells, float seed)
+{
+    ivec3 pixel = ivec3(gl_GlobalInvocationID);
+
+    vec3 uv = (vec3(pixel) + 0.5) / vec3(size);
+    vec3 gridPos = uv * cells;
+    vec3 cell = floor(gridPos);
+    vec3 localPos = fract(gridPos);
+    vec3 u = fade3(localPos);
+
+    float n000 = dot(randomGradient(cell + vec3(0,0,0), cells, seed), localPos - vec3(0,0,0));
+    float n100 = dot(randomGradient(cell + vec3(1,0,0), cells, seed), localPos - vec3(1,0,0));
+    float n010 = dot(randomGradient(cell + vec3(0,1,0), cells, seed), localPos - vec3(0,1,0));
+    float n110 = dot(randomGradient(cell + vec3(1,1,0), cells, seed), localPos - vec3(1,1,0));
+    float n001 = dot(randomGradient(cell + vec3(0,0,1), cells, seed), localPos - vec3(0,0,1));
+    float n101 = dot(randomGradient(cell + vec3(1,0,1), cells, seed), localPos - vec3(1,0,1));
+    float n011 = dot(randomGradient(cell + vec3(0,1,1), cells, seed), localPos - vec3(0,1,1));
+    float n111 = dot(randomGradient(cell + vec3(1,1,1), cells, seed), localPos - vec3(1,1,1));
+
+    float nx00 = mix(n000, n100, u.x);
+    float nx10 = mix(n010, n110, u.x);
+    float nx01 = mix(n001, n101, u.x);
+    float nx11 = mix(n011, n111, u.x);
+
+    float nxy0 = mix(nx00, nx10, u.y);
+    float nxy1 = mix(nx01, nx11, u.y);
+
+    float nxyz = mix(nxy0, nxy1, u.z);
+
+    return nxyz / 0.8660254; // normalize (max |dot| for unit grad in unit cube ≈ sqrt(3)/2)
+}
+
+float PerlinFBM(vec3 size, float baseCells, int octaves, float seed)
+{
+    float sum = 0.0;
+    float amplitude = 0.5;
+    float totalAmplitude = 0.0;
+    float cells = baseCells;
+
+    for (int i = 0; i < octaves; ++i)
+    {
+        sum += PerlinNoise(size,cells, seed + float(i)) * amplitude;
+        totalAmplitude += amplitude;
+        amplitude *= 0.5;
+        cells *= 2.0;
+    }
+    return sum / totalAmplitude; // ~[-1,1]
+}
+
+float WorleyFBM(vec3 size, float baseCells, int octaves, float seed)
+{
+    float sum = 0.0;
+    float amplitude = 0.5;
+    float totalAmplitude = 0.0;
+    float cells = baseCells;
+
+    for (int i = 0; i < octaves; ++i)
+    {
+        float w = clamp(Noise(size,cells, seed + float(i)),0.0,1.0);
+        sum += w * amplitude;
+        totalAmplitude += amplitude;
+        amplitude *= 0.5;
+        cells *= 2.0;
+    }
+    return sum / totalAmplitude; // ~[0, ~1]
+}
+
+float remap(float value, float oldMin, float oldMax, float newMin, float newMax)
+{
+    return newMin + (value - oldMin) / (oldMax - oldMin) * (newMax - newMin);
+}
+
+float PerlinWorley(vec3 size, float cells, int octaves, float seed)
+{
+    float perlin = PerlinFBM(size,cells, octaves, seed) * 0.5 + 0.5; // remap to [0,1]
+    float worley = WorleyFBM(size, cells * 2.0, octaves, seed);        // Worley usually at higher base frequency
+
+    // Worley acts as an erosion floor: below it, Perlin gets clamped to 0.
+    return perlin * (1.0 - worley);
+}
 
 void main()
 {
     ivec3 voxel = ivec3(gl_GlobalInvocationID);
-    ivec3 size = imageSize(outputImage);
 
-    if(voxel.x >= size.x || voxel.y >= size.y || voxel.z >= size.z)
+    ivec3 SizeMain = imageSize(outputMainImage);
+
+    if(voxel.x >= SizeMain.x || voxel.y >= SizeMain.y || voxel.z >= SizeMain.z)
         return;
 
-    // TODO ADD A SEED PROPERTY
-    float F1 = max(0, 1 - Noise(16,11.1));
-    float F2 = max(0, 1 - Noise(32,15.4));
 
-    float D1 = max(0, 1 - Noise(64,10.1));
-    float D2 = max(0, 1 - Noise(128,2.0));
+
+    // TODO ADD A SEED PROPERTY
+    vec4 MainResult;
+    MainResult.r = PerlinWorley(SizeMain, 4.0, 3, 0.0);
+    MainResult.g = WorleyFBM(SizeMain, 8.0, 3, 1.0);
+    MainResult.b = WorleyFBM(SizeMain, 16, 3, 2.0);
+    MainResult.a = WorleyFBM(SizeMain, 32, 3, 3.0);
     
-    imageStore(outputImage,voxel, vec4(F1,F2,D1,D2));
+    imageStore(outputMainImage,voxel, MainResult);
+
+    ivec3 SizeDetail = imageSize(outputDetailImage);
+    
+    if(voxel.x >= SizeDetail.x || voxel.y >= SizeDetail.y || voxel.z >= SizeDetail.z)
+        return;
+
+    vec4 DetailResult;
+    DetailResult.r = WorleyFBM(SizeDetail, 6.0, 3, 4.0);
+    DetailResult.g = WorleyFBM(SizeDetail, 12.0, 3, 5.0);
+    DetailResult.b = WorleyFBM(SizeDetail, 24.0, 3, 6.0);
+    DetailResult.a = 0.0;
+
+    imageStore(outputDetailImage, voxel, DetailResult);
 
 }
