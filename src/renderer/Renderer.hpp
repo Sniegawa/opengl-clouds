@@ -20,7 +20,7 @@ namespace Renderer
         Renderer(uint32_t width, uint32_t height);
         ~Renderer();
 
-        void Render(const Camera& camera); // Camera class goes here
+        void Render(const Camera& camera, float dt); // Camera class goes here
 
         void RenderImGui();
 
@@ -33,6 +33,8 @@ namespace Renderer
         CloudPass m_CloudPass;
 
         FSQPass m_FSQpass;   
+
+        FrameData m_FrameData;
 
     };
 

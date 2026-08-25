@@ -14,6 +14,7 @@ namespace Renderer
 
         m_Resources.setUniformBuffer(0, context.cameraUniformBuffer);
         m_Resources.setUniformBuffer(2, context.cloudSettingsBuffer);
+        m_Resources.setUniformBuffer(1, context.frameUniformBuffer);
     }
 
     void CloudPass::execute(RenderContext& context)
@@ -39,12 +40,18 @@ namespace Renderer
         if(ImGui::DragFloat3("Box Min", glm::value_ptr(data.BoxMin),0.1f)) flag = true;
         if(ImGui::DragFloat3("Box Max", glm::value_ptr(data.BoxMax),0.1f)) flag = true;
 
+
+        if(ImGui::DragFloat3("Sun Direction", glm::value_ptr(data.SunDir),0.01f,-1.0f,1.0f)) flag = true;
+        if(ImGui::ColorEdit3("Sun Color", glm::value_ptr(data.SunColor))) flag = true;
+
+        if(ImGui::DragFloat("Sun Intensity", &data.SunIntensity, 0.1f)) flag = true;
+
         ImGui::Spacing();
 
         
         if(ImGui::DragFloat("Shape Scale", &data.ShapeNoiseScale,0.001f,0.0001f,5.0f)) flag = true;
         if(ImGui::DragFloat3("ShapeOffset", glm::value_ptr(data.ShapeOffset),0.1f)) flag = true;
-        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed),0.01f) flag = true;
+        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed,0.001f,0.0f)) flag = true;
 
 
         ImGui::Spacing();

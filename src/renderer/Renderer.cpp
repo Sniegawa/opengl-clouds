@@ -39,7 +39,7 @@ namespace Renderer
 
     }
 
-    void Renderer::Render(const Camera& camera)
+    void Renderer::Render(const Camera& camera, float dt)
     {
         // Update Camera data context
         {
@@ -51,6 +51,11 @@ namespace Renderer
 
             m_Context.cameraUniformBuffer.update(&data, sizeof(CameraData));
         }
+
+        m_FrameData.time += dt;
+        m_Context.frameUniformBuffer.update(&m_FrameData, sizeof(FrameData));
+
+
         glClearColor(0.2f, 0.2f, 0.8f, 1.0f);
 
         glClear(GL_COLOR_BUFFER_BIT); 

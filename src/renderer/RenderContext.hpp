@@ -41,7 +41,13 @@ namespace Renderer
         float DetailNoiseScale = 1.0f;
 
         glm::vec3 BoxMax = glm::vec3(1.0f);
-        float pad1 = 0.0f;
+        float SunIntensity = 1.0f;
+
+        glm::vec3 SunDir = glm::vec3(0.5f,0.8f,0.2f);
+        float pad2 = 0.0f;
+
+        glm::vec3 SunColor = glm::vec3(0.9, 0.8, 0.1);
+        float pad3 = 0.0f;
 
     };
 

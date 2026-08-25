@@ -112,7 +112,7 @@ void App::Run()
             m_Camera.ProcessInputs(m_Window, dt);
         }
 
-        m_Renderer->Render(m_Camera);
+        m_Renderer->Render(m_Camera,dt);
 
         m_Renderer->RenderImGui();
 
