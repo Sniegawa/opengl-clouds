@@ -97,12 +97,14 @@ namespace Renderer
             UniformBuffer frameUniformBuffer;
 
             // Cloud
+            
             Texture cloudNoiseTexture;
             Texture cloudDetailTexture;
 
             UniformBuffer cloudSettingsBuffer;
             
             // Noise
+
             bool RegenNoise = true;
             UniformBuffer NoiseSettingsBuffer;
 

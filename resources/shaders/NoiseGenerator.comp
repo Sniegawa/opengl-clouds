@@ -20,6 +20,8 @@ layout( std140, binding = 1) uniform NoiseData
 };
 
 
+const float PI = 3.1416;
+
 float hash13(vec3 p)
 {
     p = fract(p * 0.1031);
@@ -39,7 +41,7 @@ vec3 randomPoint(vec3 cell, float period, float seed)
     );
 }
 
-float Noise(vec3 size, float cells, float seed)
+float WorleyNoise(vec3 size, float cells, float seed)
 {
     ivec3 pixel = ivec3(gl_GlobalInvocationID);
 
@@ -73,59 +75,74 @@ float Noise(vec3 size, float cells, float seed)
     return sqrt(minDistance);
 }
 
-// PERLIN IS FROM CLAUDE
-vec3 fade3(vec3 t)
+vec3 fade(vec3 x)
 {
-    return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+    return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
 }
 
-// Returns a pseudo-random unit gradient vector for a given cell,
-// wrapped to `period` so gradients repeat seamlessly across tile edges.
-vec3 randomGradient(vec3 cell, float period, float seed)
+vec3 grad(vec3 cell, float period, float seed)
 {
     cell = mod(cell, period);
-    cell = mod(cell + period, period); // guard against negative cells
+    cell = mod(cell + period, period);
 
-    float h1 = hash13(cell + seed * 13.17);
-    float h2 = hash13(cell + seed * 27.31);
+    float h1 = hash13(cell + seed * 4321.652);
+    float h2 = hash13(cell + seed * 5342.154);
 
-    // uniform random direction on the unit sphere
-    float theta = h1 * 6.28318530718;
-    float z = h2 * 2.0 - 1.0;
-    float r = sqrt(max(0.0, 1.0 - z * z));
-    return vec3(r * cos(theta), r * sin(theta), z);
+    float theta = h1 * 2.0 * PI;
+
+    // Calculate the sin(phi) uniformly instead of 
+    // generating the phi to ensure that angles stay uniform
+    // and aren't biased to poles.
+
+    float sin_phi = h2 * 2.0 - 1.0; // [-1:1)
+    float cos_phi = sqrt(1 - sin_phi * sin_phi);
+
+    return vec3(
+            cos_phi * cos(theta),
+            cos_phi * sin(theta),
+            sin_phi
+    );
 }
 
-float PerlinNoise(vec3 size, float cells, float seed)
+// [-1:1)
+float Perlin(vec3 size, float cells, float seed)
 {
     ivec3 pixel = ivec3(gl_GlobalInvocationID);
 
     vec3 uv = (vec3(pixel) + 0.5) / vec3(size);
     vec3 gridPos = uv * cells;
+
     vec3 cell = floor(gridPos);
-    vec3 localPos = fract(gridPos);
-    vec3 u = fade3(localPos);
 
-    float n000 = dot(randomGradient(cell + vec3(0,0,0), cells, seed), localPos - vec3(0,0,0));
-    float n100 = dot(randomGradient(cell + vec3(1,0,0), cells, seed), localPos - vec3(1,0,0));
-    float n010 = dot(randomGradient(cell + vec3(0,1,0), cells, seed), localPos - vec3(0,1,0));
-    float n110 = dot(randomGradient(cell + vec3(1,1,0), cells, seed), localPos - vec3(1,1,0));
-    float n001 = dot(randomGradient(cell + vec3(0,0,1), cells, seed), localPos - vec3(0,0,1));
-    float n101 = dot(randomGradient(cell + vec3(1,0,1), cells, seed), localPos - vec3(1,0,1));
-    float n011 = dot(randomGradient(cell + vec3(0,1,1), cells, seed), localPos - vec3(0,1,1));
-    float n111 = dot(randomGradient(cell + vec3(1,1,1), cells, seed), localPos - vec3(1,1,1));
+    vec3 f = fract(gridPos);
+    vec3 u = fade(f);
 
-    float nx00 = mix(n000, n100, u.x);
-    float nx10 = mix(n010, n110, u.x);
-    float nx01 = mix(n001, n101, u.x);
-    float nx11 = mix(n011, n111, u.x);
+    // Get values for each grid vertex
+    float v000 = dot( grad(cell + vec3(0,0,0), cells, seed), f - vec3(0,0,0));
+    float v100 = dot( grad(cell + vec3(1,0,0), cells, seed), f - vec3(1,0,0));
+    float v010 = dot( grad(cell + vec3(0,1,0), cells, seed), f - vec3(0,1,0));
+    float v110 = dot( grad(cell + vec3(1,1,0), cells, seed), f - vec3(1,1,0));
+    float v001 = dot( grad(cell + vec3(0,0,1), cells, seed), f - vec3(0,0,1));
+    float v101 = dot( grad(cell + vec3(1,0,1), cells, seed), f - vec3(1,0,1));
+    float v011 = dot( grad(cell + vec3(0,1,1), cells, seed), f - vec3(0,1,1));
+    float v111 = dot( grad(cell + vec3(1,1,1), cells, seed), f - vec3(1,1,1));
 
-    float nxy0 = mix(nx00, nx10, u.y);
-    float nxy1 = mix(nx01, nx11, u.y);
+    // Interpolate
 
-    float nxyz = mix(nxy0, nxy1, u.z);
+    // x
+    float vx00 = mix(v000, v100, u.x);
+    float vx01 = mix(v001, v101, u.x);
+    float vx10 = mix(v010, v110, u.x);
+    float vx11 = mix(v011, v111, u.x);
 
-    return nxyz / 0.8660254; // normalize (max |dot| for unit grad in unit cube ≈ sqrt(3)/2)
+    // y
+    float vxy0 = mix(vx00, vx10, u.y);
+    float vxy1 = mix(vx01, vx11, u.y);
+
+    // z
+    float vxyz = mix(vxy0, vxy1, u.z);
+
+    return vxyz;
 }
 
 float PerlinFBM(vec3 size, float baseCells, int octaves, float seed)
@@ -137,7 +154,7 @@ float PerlinFBM(vec3 size, float baseCells, int octaves, float seed)
 
     for (int i = 0; i < octaves; ++i)
     {
-        sum += PerlinNoise(size,cells, seed + float(i)) * amplitude;
+        sum += Perlin(size,cells, seed + float(i)) * amplitude;
         totalAmplitude += amplitude;
         amplitude *= 0.5;
         cells *= 2.0;
@@ -154,7 +171,7 @@ float WorleyFBM(vec3 size, float baseCells, int octaves, float seed)
 
     for (int i = 0; i < octaves; ++i)
     {
-        float w = clamp(Noise(size,cells, seed + float(i)),0.0,1.0);
+        float w = clamp(WorleyNoise(size,cells, seed + float(i)),0.0,1.0);
         sum += w * amplitude;
         totalAmplitude += amplitude;
         amplitude *= 0.5;
