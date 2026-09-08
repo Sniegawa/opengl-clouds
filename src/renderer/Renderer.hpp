@@ -22,7 +22,7 @@ namespace Renderer
 
         void Render(const Camera& camera, float dt); // Camera class goes here
 
-        void RenderImGui();
+        void RenderImGui(float dt);
 
         void OnResize(uint32_t width, uint32_t height);
     private:

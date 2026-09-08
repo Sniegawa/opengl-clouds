@@ -1,6 +1,5 @@
 #include "NoisePass.hpp"
 #include "imgui.h"
-#include <iterator>
 
 
 namespace Renderer

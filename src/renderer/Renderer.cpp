@@ -71,13 +71,42 @@ namespace Renderer
         m_FSQpass.execute(m_Context);
     }
 
-    void Renderer::RenderImGui()
+    void ShowPerfWindow(float deltaTime) // deltaTime in seconds, pass in each frame
+    {
+    static float fpsTimer = 0.0f;
+    static int frameCount = 0;
+    static float avgFPS = 0.0f;
+    static float ms = 16.67f;
+
+    fpsTimer += deltaTime;
+    frameCount++;
+
+    if (fpsTimer >= 1.0f)
+    {
+        avgFPS = frameCount / fpsTimer;
+        ms = 1000.0f / avgFPS;
+        frameCount = 0;
+        fpsTimer = 0.0f;
+    }
+
+    
+
+
+    ImGui::Begin("Performance");
+    ImGui::Text("Frame time: %.3f ms", ms);
+    ImGui::Text("Avg FPS: %.1f", avgFPS);
+    ImGui::End();
+    }
+
+
+    void Renderer::RenderImGui(float dt)
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
 
+        ShowPerfWindow(dt);
 
         m_NoisePass.onImGui(m_Context);
 

@@ -159,7 +159,7 @@ float PerlinFBM(vec3 size, float baseCells, int octaves, float seed)
         amplitude *= 0.5;
         cells *= 2.0;
     }
-    return sum / totalAmplitude; // ~[-1,1]
+    return (sum / totalAmplitude + 1.0) / 2.0 ; // ~[0,1]
 }
 
 float WorleyFBM(vec3 size, float baseCells, int octaves, float seed)
@@ -187,11 +187,12 @@ float remap(float value, float oldMin, float oldMax, float newMin, float newMax)
 
 float PerlinWorley(vec3 size, float cells, int octaves, float seed)
 {
-    float perlin = PerlinFBM(size,cells, octaves, seed) * 0.5 + 0.5; // remap to [0,1]
+    float perlin = PerlinFBM(size,cells, octaves, seed);
     float worley = WorleyFBM(size, cells * 2.0, octaves, seed);        // Worley usually at higher base frequency
 
     // Worley acts as an erosion floor: below it, Perlin gets clamped to 0.
-    return remap(perlin,worley, 1.0, 0.0, 1.0);
+    //return remap(perlin,worley, 1.0, 0.0, 1.0);
+    return clamp(perlin - worley,0.0,1.0);
 }
 
 void main()
@@ -212,12 +213,11 @@ void main()
     NoiseChannelParams detailG = channels[5];
     NoiseChannelParams detailB = channels[6];
 
-    // TODO ADD A SEED PROPERTY
     vec4 MainResult;
-    MainResult.r = PerlinWorley(SizeMain, mainR.cells, mainR.octaves, mainR.seed);
-    MainResult.g = WorleyFBM(SizeMain, mainG.cells, mainG.octaves, mainG.seed);
-    MainResult.b = WorleyFBM(SizeMain, mainB.cells, mainB.octaves, mainB.seed);
-    MainResult.a = WorleyFBM(SizeMain, mainA.cells, mainA.octaves, mainA.seed);
+    MainResult.r = 1.0 - WorleyFBM(SizeMain, mainR.cells, mainR.octaves, mainR.seed);
+    MainResult.g = WorleyFBM(SizeMain, mainG.cells, mainG.octaves, mainG.seed) ;
+    MainResult.b = WorleyFBM(SizeMain, mainB.cells, mainB.octaves, mainB.seed) ;
+    MainResult.a = WorleyFBM(SizeMain, mainA.cells, mainA.octaves, mainA.seed) ;
     imageStore(outputMainImage,voxel, MainResult);
 
     ivec3 SizeDetail = imageSize(outputDetailImage);
@@ -226,9 +226,9 @@ void main()
         return;
 
     vec4 DetailResult;
-    DetailResult.r = WorleyFBM(SizeDetail, detailR.cells, detailR.octaves, detailR.seed);
-    DetailResult.g = WorleyFBM(SizeDetail, detailG.cells, detailG.octaves, detailG.seed);
-    DetailResult.b = WorleyFBM(SizeDetail, detailB.cells, detailB.octaves, detailB.seed);
+    DetailResult.r = PerlinFBM(SizeDetail, detailR.cells, detailR.octaves, detailR.seed);
+    DetailResult.g = PerlinFBM(SizeDetail, detailG.cells, detailG.octaves, detailG.seed);
+    DetailResult.b = PerlinFBM(SizeDetail, detailB.cells, detailB.octaves, detailB.seed);
     DetailResult.a = 0.0;
 
     imageStore(outputDetailImage, voxel, DetailResult);

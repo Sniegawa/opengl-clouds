@@ -64,7 +64,7 @@ App::App()
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
 
-
+    glfwSwapInterval(0);
 
     m_Renderer = std::make_unique<Renderer::Renderer>(WINDOW_WIDTH,WINDOW_HEIGHT);
 
@@ -95,7 +95,7 @@ void App::Run()
         currentTime = glfwGetTime();
         float dt = currentTime - lastTime;
         lastTime = currentTime;
-
+        std::cout << dt << std::endl;
 
         if(glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS && CursorSwitchCooldown <= 0.0f)
         {
@@ -114,7 +114,7 @@ void App::Run()
 
         m_Renderer->Render(m_Camera,dt);
 
-        m_Renderer->RenderImGui();
+        m_Renderer->RenderImGui(dt);
 
         glfwSwapBuffers(m_Window);
 

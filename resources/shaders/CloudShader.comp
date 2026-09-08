@@ -44,23 +44,33 @@ layout(std140, binding = 2) uniform CloudData
    float SunIntensity;
 
    vec3 SunDir;
-   float pad13;
+   float Absorption;
 
    vec3 SunColor;
-   float pad14;
+   float LightAbsorption;
+
+   int MaxSteps;
+   int LightSteps;
+   float ErosionScale;
+   float LightStepSizeBase;
 };
 
 const float PI = 3.14159;
 
 
-const int MAX_STEPS = 100;
-const float ABSORPTION = 8.0;
-const vec3 SKY_COLOR = vec3(0.1,0.1,0.6);
+const vec3 SKY_COLOR = vec3(0.3,0.3,0.9);
 
-const int LIGHT_STEPS = 6;
-const float LIGHT_STEP_SIZE = 0.4;
-const float LIGHT_ABSORPTION = 2.0;
+float BeersLaw(float d, float a)
+{
+    return exp(-d * a);
+}
 
+float BeersPowder(float d, float a)
+{
+    float beer = BeersLaw(d,a);
+    float powder = 1.0 - exp(-d * a * 2.0);
+    return 2.0 * beer * powder;
+}
 
 
 float remap(float value, float oldMin, float oldMax, float newMin, float newMax)
@@ -68,27 +78,48 @@ float remap(float value, float oldMin, float oldMax, float newMin, float newMax)
     return newMin + (value - oldMin) / (oldMax - oldMin) * (newMax - newMin);
 }
 
+float GetHeightFraction(vec3 RayPos)
+{
+    return clamp((RayPos.y - boxMin.y) / (boxMax.y - boxMin.y), 0.0, 1.0);
+}
+
+float HeightAlterFunction(float heightFraction)
+{
+    float bottom = remap(heightFraction, 0.0, 0.07, 0.0, 1.0);
+    float top = remap(heightFraction, 0.07, 1.0, 1.0, 0.0);
+    return clamp(bottom, 0.0, 1.0) * clamp(top, 0.0, 1.0);
+}
+
 float SampleDensity(vec3 RayPos)
 {
     vec3 size = boxMax - boxMin;
-    vec3 uvw = (RayPos - boxMin) * 0.01 * NoiseBaseScale;
+    vec3 uvw = (RayPos - boxMin) * 0.1 * NoiseBaseScale;
     vec3 shapeSamplePos = uvw + (vec3(ShapeOffset.x + time, ShapeOffset.y, ShapeOffset.z)) * ShapeOffsetSpeed;
 
-
-    vec4 baseNoise = texture(CloudNoise, shapeSamplePos);
+    vec4 baseNoise = textureLod(CloudNoise, shapeSamplePos,0.0).rgba;
 
     float lowFreqFBM = dot(baseNoise.gba, vec3(0.625, 0.25, 0.125));
-    float baseShape = baseNoise.r;//remap(baseNoise.r, lowFreqFBM - 1.0, 1.0, 0.0, 1.0);
+
+    float lowFreqModifier = mix(lowFreqFBM, 1.0 - lowFreqFBM, clamp(baseNoise.r * 5.0, 0.0, 1.0));
+    float baseShape = remap(baseNoise.r, lowFreqModifier * ErosionScale , 1.0, 0.0, 1.0);
 
     if (baseShape <= 0.0) return 0.0;
 
-    vec3 detailNoise = texture(CloudDetail, uvw * 0.1).rgb;
-    float highFreqFBM = dot(detailNoise, vec3(0.625, 0.25, 0.125));
+    uvw = (RayPos - boxMin) * 0.01 * DetailNoiseScale;
+    vec3 detailSamplePos = uvw + (vec3(DetailOffset.x + time, DetailOffset.y, DetailOffset.z)) * DetailOffsetSpeed;
+    
 
+    vec3 detailNoise = textureLod(CloudDetail, detailSamplePos,0.0).rgb;
+    float highFreqFBM = dot(detailNoise, vec3(0.625, 0.25, 0.125));
     float highFreqModifier = mix(highFreqFBM, 1.0 - highFreqFBM, clamp(baseShape * 5.0, 0.0, 1.0));
 
-    float finalDensity = remap(baseShape, highFreqModifier * 0.2, 1.0, 0.0, 1.0);
-    return clamp(finalDensity, 0.0, 1.0);
+    float finalDensity = remap(baseShape, highFreqModifier * 0.5, 1.0, 0.0, 1.0);
+    finalDensity = clamp(finalDensity, 0.0, 1.0);
+
+    float heightFraction = GetHeightFraction(RayPos);
+    finalDensity *= HeightAlterFunction(heightFraction);
+
+    return finalDensity;
 }
 
 float PhaseFun(float cosAngle, float g)
@@ -100,12 +131,12 @@ float PhaseFun(float cosAngle, float g)
 float LightMarch(vec3 RayPos)
 {
     float totalDensity = 0.0;
-    vec3 lightStep = SunDir * LIGHT_STEP_SIZE;
+    float lightStepSize = LightStepSizeBase;
     vec3 samplePos = RayPos;
 
-    for(int i = 0; i < LIGHT_STEPS; ++i)
+    for(int i = 0; i < LightSteps; ++i)
     {
-        samplePos += lightStep;
+        samplePos += SunDir * lightStepSize;
 
         if(any(lessThan(samplePos, boxMin)) || any(greaterThan(samplePos,boxMax)))
             break;
@@ -113,7 +144,7 @@ float LightMarch(vec3 RayPos)
         totalDensity += SampleDensity(samplePos);
     }
 
-    return exp(-totalDensity * LIGHT_ABSORPTION * LIGHT_STEP_SIZE);
+    return BeersPowder(totalDensity, LightAbsorption * lightStepSize);
 }
 
 bool intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax, out vec2 StartEnd)
@@ -132,6 +163,57 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax, out vec
     StartEnd = vec2( max(nearT,0.0) , farT);
 
     return farT >= max(nearT, 0.0);
+}
+
+
+vec3 sampleSky(vec3 rayDir)
+{
+    float sunDot = dot(rayDir, normalize(SunDir));
+    float sunDisc = smoothstep(0.9995, 0.9999, sunDot); 
+    vec3 sunColor = SunColor * 20.0;
+
+    return mix(SKY_COLOR, sunColor, sunDisc);    
+}
+
+vec4 RaymarchClouds(vec3 rayOrigin, vec3 rayDir, float Start, float End)
+{
+    float t = Start;
+    float stepSize = (End - Start) / float(MaxSteps);
+
+        
+    float Transmitance = 1.0;
+    vec3 Color = vec3(0.0);
+
+    float cosAngle = dot(rayDir, SunDir);
+    float phase = PhaseFun(cosAngle, 0.3);
+
+    for(int s = 0; s < MaxSteps; ++s)
+    {
+        if(t > End || Transmitance <= 0.01)
+            break;
+
+        vec3 CurrentPos = rayOrigin + rayDir * t;
+
+
+        float density = SampleDensity(CurrentPos);
+            
+        if(density > 0.0)
+        {
+            float lightTransmitance = LightMarch(CurrentPos);
+            vec3 litColor = SunColor * SunIntensity * lightTransmitance * phase + vec3(0.2);
+
+            float stepAbsorption = BeersLaw(density, Absorption * stepSize);
+
+            Color += CloudColor * litColor * Transmitance * (1 - stepAbsorption);
+
+            Transmitance *= stepAbsorption;
+        }
+
+        t += stepSize;
+    }
+
+    return vec4(Color, Transmitance);
+
 }
 
 void main()
@@ -162,54 +244,12 @@ void main()
     vec2 StartEnd;
     if (intersectBox(rayOrigin, rayDir, boxMin, boxMax, StartEnd))
     {
-        float Start = StartEnd.x;
-        float End = StartEnd.y;
-        float t = Start;
-        float stepSize = (End - Start) / float(MAX_STEPS);
-
-        
-        float Transmitance = 1.0;
-        vec3 Color = vec3(0.0);
-
-        float cosAngle = dot(rayDir, SunDir);
-        float phase = PhaseFun(cosAngle, 0.3);
-
-        for(int s = 0; s < MAX_STEPS; ++s)
-        {
-            if(t > End || Transmitance <= 0.01)
-                break;
-
-            vec3 CurrentPos = rayOrigin + rayDir * t;
-
-
-            float density = SampleDensity(CurrentPos);
-            
-            if(density > 0.0)
-            {
-                float lightTransmitance = LightMarch(CurrentPos);
-                vec3 litColor = SunColor * SunIntensity * lightTransmitance * phase + vec3(0.2);
-                    
-
-                float stepAbsorption = exp(-density * ABSORPTION * stepSize);
-
-                Color += CloudColor * litColor * Transmitance * (1 - stepAbsorption);
-
-                Transmitance *= stepAbsorption;
-
-            }
-
-            t += stepSize;
-        }
-
-        FinalColor = Color + SKY_COLOR * Transmitance;
+        vec4 result = RaymarchClouds(rayOrigin, rayDir, StartEnd.x, StartEnd.y);
+        FinalColor = result.rgb + sampleSky(rayDir) * result.a;
     }
     else
     {
-        float sunDot = dot(rayDir, normalize(SunDir));
-        float sunDisc = smoothstep(0.9995, 0.9999, sunDot); 
-        vec3 sunColor = SunColor * 20.0;
-
-        FinalColor = mix(SKY_COLOR, sunColor, sunDisc);    
+        FinalColor = sampleSky(rayDir); 
     }
     imageStore(outputImage, pixel, vec4(FinalColor.x, FinalColor.y, FinalColor.z, 1.0));
 }

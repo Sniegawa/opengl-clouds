@@ -51,7 +51,7 @@ namespace Renderer
         
         if(ImGui::DragFloat("Shape Scale", &data.ShapeNoiseScale,0.001f,0.0001f,5.0f)) flag = true;
         if(ImGui::DragFloat3("ShapeOffset", glm::value_ptr(data.ShapeOffset),0.1f)) flag = true;
-        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed,0.001f,0.0f)) flag = true;
+        if(ImGui::DragFloat("Shape Offset Speed", &data.ShapeOffsetSpeed,0.001f,0.0)) flag = true;
 
 
         ImGui::Spacing();
@@ -64,6 +64,17 @@ namespace Renderer
         ImGui::Spacing();
 
         if(ImGui::ColorEdit3("CloudColor", glm::value_ptr(data.CloudColor))) flag = true;
+
+        if(ImGui::DragFloat("Absorption", &data.Absorption, 0.05f, 0.01f, 50.0f)) flag = true;
+
+        if(ImGui::DragFloat("LightAbsorption", &data.LightAbsorption, 0.01f, 0.001f, 50.0f)) flag = true;
+
+        if(ImGui::DragInt("MaxSteps", &data.MaxSteps, 1.0f, 10, 500)) flag = true;
+
+        if(ImGui::DragInt("LightSteps", &data.LightSteps, 0.01f, 1, 50)) flag = true;
+
+        if(ImGui::DragFloat("LightStepSizeFactor", &data.ErosionFactor , 0.01f, 0.0f, 1.0f)) flag = true;
+        if(ImGui::DragFloat("LightStepSizeBase", &data.LightStepSizeBase, 0.01f, 0.01f, 4.0f)) flag = true;
 
 
         if(flag)

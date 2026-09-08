@@ -67,6 +67,10 @@ namespace Renderer
 
         glTextureParameteri(m_Handle, GL_TEXTURE_MIN_FILTER, Helper::ToGL(flags.minFilter));
         glTextureParameteri(m_Handle, GL_TEXTURE_MAG_FILTER, Helper::ToGL(flags.magFilter));
+        GLint swizzle[4];
+        glGetTextureParameteriv(m_Handle, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+
+        int a = 0;
     }
 
 

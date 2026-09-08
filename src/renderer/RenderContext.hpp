@@ -28,8 +28,8 @@ namespace Renderer
 
     struct CloudData
     {
-        glm::vec3 CloudColor = glm::vec3(0.9f);
-        float ShapeNoiseScale = 0.5f;
+        glm::vec3 CloudColor = glm::vec3(1.0f);
+        float ShapeNoiseScale = 0.081f;
 
         glm::vec3 ShapeOffset = glm::vec3(0.0f);
         float ShapeOffsetSpeed = 0.0f;
@@ -37,17 +37,22 @@ namespace Renderer
         glm::vec3 DetailOffset = glm::vec3(0.0f);
         float DetailOffsetSpeed = 0.0f;
 
-        glm::vec3 BoxMin = glm::vec3(-1.0f);
+        glm::vec3 BoxMin = glm::vec3(-150.0f,-15.0f,-150.0f);
         float DetailNoiseScale = 1.0f;
 
-        glm::vec3 BoxMax = glm::vec3(1.0f);
-        float SunIntensity = 1.0f;
+        glm::vec3 BoxMax = glm::vec3(150.0f,15.0f,150.0f);
+        float SunIntensity = 2.7f;
 
         glm::vec3 SunDir = glm::vec3(0.5f,0.8f,0.2f);
-        float pad2 = 0.0f;
+        float Absorption = 8.3f;
 
-        glm::vec3 SunColor = glm::vec3(0.9, 0.8, 0.1);
-        float pad3 = 0.0f;
+        glm::vec3 SunColor = glm::vec3(0.95f, 0.95f, 1.0f);
+        float LightAbsorption = 0.44f;
+        
+        int MaxSteps = 100;
+        int LightSteps = 16; // A bit laggy
+        float ErosionFactor = 0.78f;
+        float LightStepSizeBase = 0.14f;
 
     };
 
@@ -69,13 +74,13 @@ namespace Renderer
         NoiseData data;
         data.noiseChannels =
         {{
-            { 8.0f, 5, 1.0f, 0.0f }, // mainR
-            { 8.0f, 4, 2.0f, 0.0f }, // mainG
+            { 6.0f, 4, 1.0f, 0.0f }, // mainR
+            { 4.0f, 2, 2.0f, 0.0f }, // mainG
             { 16.0f, 4, 3.0f, 0.0f }, // mainB
             { 32.0f, 4, 4.0f, 0.0f }, // mainA
-            { 12.0f, 3, 5.0f, 0.0f }, // detailR
+            { 20.0f, 2, 5.0f, 0.0f }, // detailR
             { 24.0f, 3, 6.0f, 0.0f }, // detailG
-            { 48.0f, 3, 7.0f, 0.0f }  // detailB
+            { 60.0f, 2, 7.0f, 0.0f }  // detailB
         }};
         return data;
     }
