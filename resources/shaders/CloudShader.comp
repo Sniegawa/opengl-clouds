@@ -5,6 +5,7 @@ layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0) uniform sampler3D CloudNoise;
 layout(binding = 1) uniform sampler3D CloudDetail;
+layout(binding = 2) uniform sampler2D CloudMask;
 
 layout(rgba16f, binding = 0) uniform image2D outputImage;
 
@@ -96,12 +97,18 @@ float SampleDensity(vec3 RayPos)
     vec3 uvw = (RayPos - boxMin) * 0.1 * NoiseBaseScale;
     vec3 shapeSamplePos = uvw + (vec3(ShapeOffset.x + time, ShapeOffset.y, ShapeOffset.z)) * ShapeOffsetSpeed;
 
+    vec2 uv = (RayPos.xz - boxMin.xz) / (boxMax.xz - boxMin.xz);
+    float coverage = texture(CloudMask,uv).r;
+
     vec4 baseNoise = textureLod(CloudNoise, shapeSamplePos,0.0).rgba;
+
+    float baseWithCoverage = remap(baseNoise.r, 1.0 - coverage, 1.0, 0.0, 1.0);
+    baseWithCoverage *= coverage;
 
     float lowFreqFBM = dot(baseNoise.gba, vec3(0.625, 0.25, 0.125));
 
     float lowFreqModifier = mix(lowFreqFBM, 1.0 - lowFreqFBM, clamp(baseNoise.r * 5.0, 0.0, 1.0));
-    float baseShape = remap(baseNoise.r, lowFreqModifier * ErosionScale , 1.0, 0.0, 1.0);
+    float baseShape = remap(baseWithCoverage, lowFreqModifier * ErosionScale , 1.0, 0.0, 1.0);
 
     if (baseShape <= 0.0) return 0.0;
 
@@ -186,6 +193,8 @@ vec4 RaymarchClouds(vec3 rayOrigin, vec3 rayDir, float Start, float End)
     float cosAngle = dot(rayDir, SunDir);
     float phase = PhaseFun(cosAngle, 0.3);
 
+    float stepBoost = 0.0f;
+
     for(int s = 0; s < MaxSteps; ++s)
     {
         if(t > End || Transmitance <= 0.01)
@@ -206,9 +215,14 @@ vec4 RaymarchClouds(vec3 rayOrigin, vec3 rayDir, float Start, float End)
             Color += CloudColor * litColor * Transmitance * (1 - stepAbsorption);
 
             Transmitance *= stepAbsorption;
+            stepBoost = 0.0f;
+        }
+        else
+        {
+            //stepBoost += stepSize;
         }
 
-        t += stepSize;
+        t += stepSize + stepBoost;
     }
 
     return vec4(Color, Transmitance);

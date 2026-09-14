@@ -107,6 +107,9 @@ namespace Renderer
             Texture cloudDetailTexture;
 
             UniformBuffer cloudSettingsBuffer;
+
+            // Cloud mask
+            Texture cloudMask;
             
             // Noise
 

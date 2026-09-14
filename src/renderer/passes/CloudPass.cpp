@@ -1,5 +1,8 @@
 #include "CloudPass.hpp"
 #include "imgui.h"
+#include <cmath>
+#include <cstdint>
+#include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace Renderer
@@ -10,6 +13,7 @@ namespace Renderer
     {
         m_Resources.setTexture(0, context.cloudNoiseTexture);
         m_Resources.setTexture(1, context.cloudDetailTexture);
+        m_Resources.setTexture(2, context.cloudMask);
         m_Resources.setImage(0, context.outputTexture, ImageAccess::WriteOnly);
 
         m_Resources.setUniformBuffer(0, context.cameraUniformBuffer);
@@ -83,6 +87,93 @@ namespace Renderer
 
 
         ImGui::End();
+
+
+        ImGui::Begin("Mask",NULL, ImGuiWindowFlags_NoMove);
+
+        static int BrushSize = 16;
+        static float BrushStrength = 2.0f;
+
+        const ImVec2 canvasSize = ImVec2(512,512);
+        uint32_t TextureSize = context.cloudMask.getWidth(); // Mask will always be a square
+        float scale = static_cast<float>(TextureSize) / canvasSize.x;
+
+        static std::vector<uint8_t> maskBuffer(TextureSize * TextureSize, 0); // Todo move it somewhere 
+
+
+        unsigned int maskID = context.cloudMask.getHandle();
+        ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+        ImGui::Image((ImTextureID)(uintptr_t)maskID,canvasSize,ImVec2(0,1),ImVec2(1,0));
+
+
+        ImGuiIO& io = ImGui::GetIO();
+        if(ImGui::IsItemHovered() && (ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseDown(ImGuiMouseButton_Right)))
+        {
+           ImVec2 mousePos = io.MousePos;
+           float localX = mousePos.x - canvasPos.x;
+           float localY = mousePos.y - canvasPos.y;
+
+           if(localX >= 0.0f && localX < canvasSize.x && localY >= 0.0f && localY < canvasSize.y)
+           {
+                int centerX = static_cast<int>(localX * scale);
+                int centerY = static_cast<int>((canvasSize.y - localY) * scale);
+
+                int brushRadius = BrushSize * static_cast<int>(scale);
+                int minX = std::max(0, centerX - brushRadius);
+                int minY = std::max(0, centerY - brushRadius);
+                int maxX = std::min(static_cast<int>(TextureSize) - 1, centerX + brushRadius);
+                int maxY = std::min(static_cast<int>(TextureSize) - 1, centerY + brushRadius);
+
+
+                uint32_t regionWidth = static_cast<uint32_t>(maxX - minX + 1);
+                uint32_t regionHeight = static_cast<uint32_t>(maxY - minY + 1);
+
+                float sign = ImGui::IsMouseDown(ImGuiMouseButton_Right) ? -1.0f : 1.0f;
+
+                std::vector<uint8_t> patch(regionWidth * regionHeight,0);
+                for(int y = minY; y <= maxY; y++)
+                {
+                    for(int x = minX; x <= maxX; x++)
+                    {
+                        float dx = static_cast<float>(x - centerX);
+                        float dy = static_cast<float>(y - centerY);
+                        float dist = std::sqrt(dx * dx + dy * dy);
+
+                        float t = dist / static_cast<float>(brushRadius);
+                        float falloff = std::clamp(std::exp(-t * t * 4.0f) - 0.1f, 0.0f, 1.0f);
+                        
+                        size_t idx = static_cast<size_t>(y) * TextureSize + static_cast<size_t>(x);
+
+                        float pps = io.DeltaTime * 400.0f;
+                        float updated = std::clamp(static_cast<float>(maskBuffer[idx]) + sign * falloff * BrushStrength * pps, 0.0f, 255.0f);
+
+                        uint8_t newValue = static_cast<uint8_t>(updated);
+                        maskBuffer[idx] = newValue;
+                        patch[(y - minY) * regionWidth + (x - minX)] = newValue;
+                    }
+                }
+
+                context.cloudMask.setSubData(
+                        static_cast<uint32_t>(minX),
+                        static_cast<uint32_t>(minY),
+                        regionWidth,
+                        regionHeight,
+                        patch.data(),
+                        Format::Red,
+                        DataType::UnsignedByte,
+                        0
+                );
+           }
+
+
+        }
+
+
+        ImGui::DragInt("BrushSize", &BrushSize,1.0f,2,64);
+        ImGui::DragFloat("Brush Strength", &BrushStrength, 0.5f, 1.0f, 16.0f);
+        ImGui::End();
+
+
     }
 
 } // Renderer

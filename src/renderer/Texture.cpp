@@ -127,6 +127,15 @@ namespace Renderer
 
     void Texture::setSubData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* data, Format format, DataType dataType, uint32_t mipLevel)
     {
+        GLint prevAlignment;
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlignment);
+        bool ChangedAlignment = false;
+        if(format == Format::Red || format == Format::RedInteger)
+        {
+            ChangedAlignment = true;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        }
+
         glTextureSubImage2D(
                 m_Handle,
                 mipLevel,
@@ -138,6 +147,9 @@ namespace Renderer
                 Helper::ToGL(dataType),
                 data
         );
+
+        if(ChangedAlignment)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlignment);
     }
     void Texture::setSubData(uint32_t x, uint32_t y, uint32_t z, uint32_t width, uint32_t height, uint32_t depth, const void* data, Format format, DataType dataType, uint32_t mipLevel)
     {
