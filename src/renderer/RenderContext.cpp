@@ -7,8 +7,8 @@ namespace Renderer
     RenderContext::RenderContext(uint32_t width, uint32_t height)
         :
             width(width),height(height),
-            cloudNoiseTexture(128,128,128,InternalFormat::RGBA8),
-            cloudDetailTexture(32, 32, 32, InternalFormat::RGBA8),
+            cloudNoiseTexture(256,256,256,InternalFormat::RGBA8),
+            cloudDetailTexture(64, 64, 64, InternalFormat::RGBA8),
             outputTexture(width, height, InternalFormat::RGBA16F)
     {}
 

@@ -95,7 +95,6 @@ void App::Run()
         currentTime = glfwGetTime();
         float dt = currentTime - lastTime;
         lastTime = currentTime;
-        std::cout << dt << std::endl;
 
         if(glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS && CursorSwitchCooldown <= 0.0f)
         {

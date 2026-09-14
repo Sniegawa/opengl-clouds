@@ -29,7 +29,7 @@ namespace Renderer
     struct CloudData
     {
         glm::vec3 CloudColor = glm::vec3(1.0f);
-        float ShapeNoiseScale = 0.081f;
+        float ShapeNoiseScale = 0.04f;
 
         glm::vec3 ShapeOffset = glm::vec3(0.0f);
         float ShapeOffsetSpeed = 0.0f;
@@ -37,22 +37,22 @@ namespace Renderer
         glm::vec3 DetailOffset = glm::vec3(0.0f);
         float DetailOffsetSpeed = 0.0f;
 
-        glm::vec3 BoxMin = glm::vec3(-150.0f,-15.0f,-150.0f);
+        glm::vec3 BoxMin = glm::vec3(-500.0f,-15.0f,-500.0f);
         float DetailNoiseScale = 1.0f;
 
-        glm::vec3 BoxMax = glm::vec3(150.0f,15.0f,150.0f);
-        float SunIntensity = 2.7f;
+        glm::vec3 BoxMax = glm::vec3(500.0f,15.0f,500.0f);
+        float SunIntensity = 4.1f;
 
         glm::vec3 SunDir = glm::vec3(0.5f,0.8f,0.2f);
-        float Absorption = 8.3f;
+        float Absorption = 2.46f;
 
         glm::vec3 SunColor = glm::vec3(0.95f, 0.95f, 1.0f);
-        float LightAbsorption = 0.44f;
+        float LightAbsorption = 1.29f;
         
         int MaxSteps = 100;
-        int LightSteps = 16; // A bit laggy
-        float ErosionFactor = 0.78f;
-        float LightStepSizeBase = 0.14f;
+        int LightSteps = 8; // A bit laggy
+        float ErosionFactor = 0.54f;
+        float LightStepSize = 1.61f;
 
     };
 

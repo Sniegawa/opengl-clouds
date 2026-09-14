@@ -73,8 +73,8 @@ namespace Renderer
 
         if(ImGui::DragInt("LightSteps", &data.LightSteps, 0.01f, 1, 50)) flag = true;
 
-        if(ImGui::DragFloat("LightStepSizeFactor", &data.ErosionFactor , 0.01f, 0.0f, 1.0f)) flag = true;
-        if(ImGui::DragFloat("LightStepSizeBase", &data.LightStepSizeBase, 0.01f, 0.01f, 4.0f)) flag = true;
+        if(ImGui::DragFloat("Erosion Factor", &data.ErosionFactor , 0.01f, 0.0f, 1.0f)) flag = true;
+        if(ImGui::DragFloat("LightStepSize", &data.LightStepSize, 0.01f, 0.01f, 4.0f)) flag = true;
 
 
         if(flag)
